@@ -1,0 +1,1 @@
+# YOLOv8-Ile-Baretsiz-Insan-Tespiti
