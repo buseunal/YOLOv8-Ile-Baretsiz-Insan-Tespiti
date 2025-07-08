@@ -1,0 +1,9 @@
+path: C:/Users/PC/PycharmProjects/GoruntuİslemeFinal/Safety-Helmet-Wearing-Dataset.v3-base-dataset.yolov8
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: hat
+  1: person
