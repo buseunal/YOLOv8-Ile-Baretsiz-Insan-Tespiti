@@ -65,6 +65,6 @@ simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğind
   <img src="results/result4.png" width="45%" alt="Result 4"/>
 </p>
 
-![Result 4](results/result4.png)
+
 
 
