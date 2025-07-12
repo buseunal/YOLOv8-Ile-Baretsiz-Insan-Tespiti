@@ -2,13 +2,9 @@
 
 ## 📌 Tanıtım
 
-Bu proje, çalışma alanlarında baret takmayan kişilerin otomatik olarak tespit edilmesini 
-amaçlamaktadır.  YOLOv8 modeli kullanılarak `"hat"` ve `"person"` olmak üzere iki sınıfta 
-nesne tespiti yapılıp baretli ve baretsiz insanlar bu sınıflar üzerinden ayrılmıştır.
+Bu proje, çalışma alanlarında baret takmayan kişilerin otomatik olarak tespit edilmesini amaçlamaktadır.  YOLOv8 modeli kullanılarak `"hat"` ve `"person"` olmak üzere iki sınıfta nesne tespiti yapılıp baretli ve baretsiz insanlar bu sınıflar üzerinden ayrılmıştır.
 
-Gerçek zamanlı bir izleme sistemini simüle edebilmek için dört farklı video kullanılmış,  
-eğitilen model bu videolara uygulanarak kamera görüntülerine benzer bir simülasyon ortamı oluşturulmuştur.  
-Bu sayede sistem hem model doğruluğu hem de potansiyel pratik kullanım açısından test edilmiştir.
+Gerçek zamanlı bir izleme sistemini simüle edebilmek için dört farklı video kullanılmış, eğitilen model bu videolara uygulanarak kamera görüntülerine benzer bir simülasyon ortamı oluşturulmuştur. Bu sayede sistem hem model doğruluğu hem de potansiyel pratik kullanım açısından test edilmiştir.
 
 ---
 
@@ -49,9 +45,7 @@ bu da farklı IoU eşiklerinde modelin genel başarımını yansıtır.
 
 ## 🖼️ Model Çıktıları ve Tespit Sonuçları
 
-Modelin `"hat"` ve `"person"` sınıflarını başarıyla tespit ettiği,  
-simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde 
-çerçeveleyerek uyarı verdiği örnek görüntüler aşağıda yer almaktadır:
+Modelin `"hat"` ve `"person"` sınıflarını başarıyla tespit ettiği, simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde çerçeveleyerek uyarı verdiği örnek görüntüler aşağıda yer almaktadır:
 
 ---
 
