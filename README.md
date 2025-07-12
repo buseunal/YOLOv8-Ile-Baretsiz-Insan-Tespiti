@@ -26,12 +26,15 @@ Tümü	       0.932	         0.875	       0.934	      0.586
 📌 mAP@0.5:0.95 değeri ise ortalama %58 civarındadır; bu da farklı IoU eşiklerinde modelin genel başarımını yansıtır.
 
 🖼️ Model Çıktıları ve Tespit Sonuçları
+
+### 🖼️ Model Çıktıları ve Tespit Sonuçları
+
 Modelin "hat" ve "person" sınıflarını başarıyla tespit ettiği ve simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde uyarı verdiği örnek görüntüler aşağıda yer almaktadır:
 
-!(results/result1.png)
-!(results/result2.png)
-!(results/result3.png)
-!(results/result4.png)
+![Kamera 1](results/result1.png)
+![Kamera 2](results/result2.png)
+![Kamera 3](results/result3.png)
+![Kamera 4](results/result4.png)
 
 
 
