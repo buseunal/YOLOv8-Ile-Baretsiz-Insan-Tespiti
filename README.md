@@ -49,9 +49,9 @@ bu da farklı IoU eşiklerinde modelin genel başarımını yansıtır.
 
 ## 🖼️ Model Çıktıları ve Tespit Sonuçları
 
-Modelin `"hat"` ve `"person"` sınıflarını başarıyla tespit ettiği,  
-simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde uyarı verdiği  
-örnek görüntüler aşağıda yer almaktadır:
+Modelin `"hat"` ve `"person"` sınıflarını başarıyla tespit ettiği ve
+simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde 
+çerçeveleyerek uyarı verdiği örnek görüntüler aşağıda yer almaktadır:
 
 ---
 
