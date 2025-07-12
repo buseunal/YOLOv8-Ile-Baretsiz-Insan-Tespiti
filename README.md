@@ -1,7 +1,5 @@
 # YOLOv8 ile Baretsiz İnsan Tespiti
 
----
-
 ## 📌 Tanıtım
 
 Bu proje, çalışma alanlarında baret takmayan kişilerin otomatik olarak tespit edilmesini amaçlamaktadır.  
