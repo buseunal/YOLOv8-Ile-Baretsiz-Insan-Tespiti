@@ -1,18 +1,18 @@
-YOLOv8 İLE BARETSİZ İNSAN TESPİTİ
+### YOLOv8 İLE BARETSİZ İNSAN TESPİTİ
 
-📌 Tanıtım
+### 📌 Tanıtım
 Bu proje, çalışma alanlarında baret takmayan kişilerin otomatik olarak tespit edilmesini amaçlamaktadır. YOLOv8 modeli kullanılarak "hat" ve "person" olmak üzere nesne tespiti sağlanmış, baretli ve baretsiz insanların ayrımı bu sınıflar üzerinden yapılmıştır. Gerçek zamanlı bir izleme sistemini simüle edebilmek için dört farklı video kullanılmış, eğitilen model bu videolara uygulanarak kamera görüntülerine benzer bir simülasyon ortamı oluşturulmuştur. Bu sayede sistem hem model doğruluğu hem de potansiyel pratik kullanım açısından test edilmiştir.
 
-🧰 Kullanılan Teknolojiler
+### 🧰 Kullanılan Teknolojiler
 •Python
 •Ultralytics YOLOv8
 •OpenCV
 •PyTorch
 
-📂 Veri Seti
+### 📂 Veri Seti
 Kaynak: https://universe.roboflow.com/zayed-uddin-chowdhury-ghymx/safety-helmet-wearing-dataset
 
-🧠 Model Eğitimi
+### 🧠 Model Eğitimi
 Kullanılan model: YOLOv8m
 Epoch sayısı: 20
 Batch size: 16
@@ -25,16 +25,19 @@ Tümü	       0.932	         0.875	       0.934	      0.586
 📌 mAP@0.5 değerleri her iki sınıf için de %93’ün üzerinde olup modelin nesneleri yüksek doğrulukla tanıyabildiğini göstermektedir.
 📌 mAP@0.5:0.95 değeri ise ortalama %58 civarındadır; bu da farklı IoU eşiklerinde modelin genel başarımını yansıtır.
 
-🖼️ Model Çıktıları ve Tespit Sonuçları
 
 ### 🖼️ Model Çıktıları ve Tespit Sonuçları
 
 Modelin "hat" ve "person" sınıflarını başarıyla tespit ettiği ve simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğinde uyarı verdiği örnek görüntüler aşağıda yer almaktadır:
 
-![Kamera 1](results/result1.png)
-![Kamera 2](results/result2.png)
-![Kamera 3](results/result3.png)
-![Kamera 4](results/result4.png)
+<p float="left">
+  <img src="results/result1.png" width="45%" />
+  <img src="results/result2.png" width="45%" />
+</p>
+<p float="left">
+  <img src="results/result3.png" width="45%" />
+  <img src="results/result4.png" width="45%" />
+</p>
 
 
 
