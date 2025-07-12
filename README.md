@@ -76,4 +76,4 @@ simüle edilmiş kamera frameleri üzerinde baretsiz çalışan tespit ettiğind
 ### 🔹 Video 4 
 ![Result 4](results/result4.png)
 
----
+
