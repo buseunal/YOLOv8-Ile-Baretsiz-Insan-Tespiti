@@ -1,4 +1,4 @@
-# 🦺 YOLOv8 ile Baretsiz İnsan Tespiti
+# YOLOv8 ile Baretsiz İnsan Tespiti
 
 ---
 
