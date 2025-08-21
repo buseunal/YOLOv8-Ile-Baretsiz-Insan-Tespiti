@@ -14,9 +14,8 @@ benzer bir simülasyon ortamı oluşturulmuştur. Bu sayede sistem hem model do�
 
 - Python  
 - Ultralytics YOLOv8  
-- OpenCV  
-- PyTorch  
-
+- OpenCV
+  
 ---
 
 ## 📂 Veri Seti
