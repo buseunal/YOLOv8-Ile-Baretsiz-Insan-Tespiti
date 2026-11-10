@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Helmet Alert Pipeline",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "webhook_url",
+      "value": "http://localhost:5678/webhook-test/helmet-violation"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 - Geçerli ihlal (kaydedilmeli)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status alanı saved', () => pm.expect(pm.response.json().status).to.eql('saved'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"camera_id\": \"cam-03\",\n  \"violation_type\": \"no_helmet\",\n  \"confidence\": 0.87\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2 - Düşük güven (filtrelenmeli)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status alanı ignored', () => pm.expect(pm.response.json().status).to.eql('ignored'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"camera_id\": \"cam-03\",\n  \"violation_type\": \"no_helmet\",\n  \"confidence\": 0.35\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3 - Sınır değer 0.6 (kaydedilmeli)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status alanı saved', () => pm.expect(pm.response.json().status).to.eql('saved'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"camera_id\": \"cam-01\",\n  \"violation_type\": \"no_helmet\",\n  \"confidence\": 0.6\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      }
+    }
+  ]
+}

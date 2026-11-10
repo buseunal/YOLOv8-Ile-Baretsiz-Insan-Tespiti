@@ -1,0 +1,286 @@
+{
+  "name": "Helmet Alert Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "helmet-violation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "helmet-violation-0001"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.body.confidence }}",
+              "rightValue": 0.6,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "Güven >= 0.6 ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "violations"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "camera_id": "={{ $json.body.camera_id }}",
+            "violation_type": "={{ $json.body.violation_type }}",
+            "confidence": "={{ $json.body.confidence }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Postgres: ihlali kaydet",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        460,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"saved\" }",
+        "options": {}
+      },
+      "id": "n4",
+      "name": "Yanıt: saved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ignored\", \"reason\": \"low confidence\" }",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "Yanıt: ignored",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "BURAYA_CHAT_ID",
+        "text": "=⚠️ Kasksız kişi tespit edildi\nKamera: {{ $('Webhook').item.json.body.camera_id }}\nGüven: {{ $('Webhook').item.json.body.confidence }}",
+        "additionalFields": {}
+      },
+      "id": "n6",
+      "name": "Telegram: anlık uyarı (opsiyonel)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        680,
+        -100
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n7",
+      "name": "Her akşam 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT camera_id, COUNT(*) AS ihlal_sayisi\nFROM violations\nWHERE detected_at >= CURRENT_DATE\nGROUP BY camera_id\nORDER BY ihlal_sayisi DESC;",
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Postgres: günlük rapor",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst total = rows.reduce((s, r) => s + Number(r.ihlal_sayisi), 0);\nconst lines = rows.map(r => `${r.camera_id}: ${r.ihlal_sayisi}`).join('\\n');\nreturn [{ json: { text: rows.length ? `📊 Günlük kask raporu (toplam ${total})\\n${lines}` : '📊 Bugün ihlal kaydı yok.' } }];"
+      },
+      "id": "n9",
+      "name": "Rapor metnini hazırla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "BURAYA_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "n10",
+      "name": "Telegram: günlük rapor (opsiyonel)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        360
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Güven >= 0.6 ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Güven >= 0.6 ?": {
+      "main": [
+        [
+          {
+            "node": "Postgres: ihlali kaydet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Yanıt: ignored",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: ihlali kaydet": {
+      "main": [
+        [
+          {
+            "node": "Telegram: anlık uyarı (opsiyonel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: anlık uyarı (opsiyonel)": {
+      "main": [
+        [
+          {
+            "node": "Yanıt: saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Her akşam 20:00": {
+      "main": [
+        [
+          {
+            "node": "Postgres: günlük rapor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: günlük rapor": {
+      "main": [
+        [
+          {
+            "node": "Rapor metnini hazırla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rapor metnini hazırla": {
+      "main": [
+        [
+          {
+            "node": "Telegram: günlük rapor (opsiyonel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,19 @@
+# Gizli bilgiler
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Ultralytics çıktıları
+runs/
+
+# Videolar (boyut / telif nedeniyle repoya konmuyor)
+*.mp4
+videos/
