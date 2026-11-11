@@ -1,181 +1,168 @@
 # YOLOv8 ile Baretsiz İnsan Tespiti
 
-Şantiye kameralarında baret takmayan kişileri YOLOv8 ile gerçek zamanlı tespit edip ihlalleri **n8n webhook → PostgreSQL (Neon)** hattıyla kaydeden ve **Telegram** üzerinden günlük özet raporlayan uçtan uca bir iş güvenliği projesi.
+Şantiye ve çalışma sahalarında baret takmayan personeli YOLOv8 ile eşzamanlı tespit eden, tespit edilen kural ihlallerini webhook mimarisi üzerinden PostgreSQL veri tabanına kaydeden ve Telegram üzerinden zamanlanmış raporlama sunan uçtan uca iş güvenliği denetim sistemi.
 
 ---
 
-## 🔀 Akış Şeması
+## Mimari Akış
 
 ```mermaid
 flowchart LR
-    A["4 kamera / video"] --> B["YOLOv8 tespiti<br/>(hat / person)"]
-    B -->|"person = baret yok"| C["Python: POST JSON<br/>(10 sn cooldown)"]
+    A["Çoklu Kamera Akışı"] --> B["YOLOv8 Nesne Tespiti"]
+    B -->|"İhlal Tespiti"| C["Asenkron Event Dispatcher"]
     C --> D["n8n Webhook"]
-    D --> E{"confidence >= 0.6?"}
-    E -->|Evet| F[("PostgreSQL / Neon<br/>violations")]
-    E -->|Hayır| G["Olay elenir (ignored)"]
-    F --> H["Respond: saved"]
+    D --> E{"Doğruluk Eşiği Analizi"}
+    E -->|Onaylandı| F[("PostgreSQL")]
+    E -->|Filtrelendi| G["Discard"]
+    F --> H["Response: saved"]
     
-    subgraph Otomatik Raporlama
-        T["Cron: Her akşam 20:00"] --> P["Postgres: Günlük özet sorgusu"]
-        P --> JS["Rapor metnini hazırla"]
-        JS --> TG["Telegram Bot Bildirimi"]
+    subgraph Zamanlanmış Raporlama
+        T["Cron Scheduler"] --> P["SQL Agregasyon Sorgusu"]
+        P --> JS["Veri Formatlama"]
+        JS --> TG["Telegram Bot Servisi"]
     end
 ```
 
 ---
 
-## ✨ Özellikler
+## Temel Özellikler
 
-- `hat` ve `person` sınıflarıyla baretli / baretsiz kişi ayrımı
-- 4 kamerayı simüle eden 2x2 izleme ekranı; ihlal olan kamera kırmızı çerçeveyle işaretlenir
-- GPU (CUDA) desteği ve 4 karenin tek seferde (batch) işlenmesi
-- İhlal anında n8n webhook'una JSON olay gönderimi (kamera başına 10 sn cooldown, arka plan thread'i)
-- n8n'de güven skoru filtresi ve PostgreSQL'e kayıt
-- Her akşam saat 20:00'de otomatik çalışan ve günün ihlal istatistiklerini ileten Telegram botu entegrasyonu
-- Hazır SQL rapor sorguları ve Postman test koleksiyonu
-- Webhook adresi kodda değil, `.env` dosyasında
-
----
-
-## 🧰 Kullanılan Teknolojiler
-
-- Python, Ultralytics YOLOv8, OpenCV, PyTorch
-- n8n (webhook ve zamanlanmış rapor otomasyonu)
-- PostgreSQL (Neon)
-- Telegram Bot API
-- Postman (API testleri)
+- **Çoklu Sınıf Analizi:** `hat` ve `person` sınıfları üzerinden baretli ve baretsiz ayrımı
+- **Eşzamanlı Çoklu Akış Desteği:** 4 ayrı kamera kaynağının tek ekranda izlenmesi ve ihlal anında ilgili kaynağın dinamik olarak işaretlenmesi
+- **Yüksek Performanslı Çıkarım:** Batch processing ve CUDA hızlandırması ile optimize edilmiş gerçek zamanlı tespit
+- **Asenkron Event Bildirimi:** Ana döngüyü bloklamayan, cooldown mekanizmasına sahip asenkron bildirim mimarisi
+- **Doğrulama ve Filtreleme Hattı:** n8n üzerinde belirlenen güven skoru eşiğine göre filtreleme ve veri tabanı kayıt yönetimi
+- **Otomatik Vardiya / Gün Sonu Raporu:** Belirlenen periyotlarda saha ihlal istatistiklerini derleyip ileten Telegram entegrasyonu
+- **Hazır Test ve Raporlama Paketi:** Postman test koleksiyonu ve analitik SQL sorguları
+- **Güvenli Yapılandırma:** Hassas bağlantı adreslerinin `.env` üzerinden yönetimi
 
 ---
 
-## 📂 Veri Seti ve Model
+## Teknoloji Yığını
 
-- Veri seti: [Safety Helmet Wearing Dataset – Roboflow](https://universe.roboflow.com/zayed-uddin-chowdhury-ghymx/safety-helmet-wearing-dataset)
-- Model: `YOLOv8m`, 20 epoch, batch 16
-
-| Sınıf   | Doğruluk (P) | Duyarlılık (R) | mAP@0.5 | mAP@0.5:0.95 |
-|---------|--------------|----------------|---------|--------------|
-| hat     | 0.928        | 0.871          | 0.928   | 0.691        |
-| person  | 0.935        | 0.879          | 0.939   | 0.480        |
-| **Tümü** | **0.932**   | **0.875**      | **0.934** | **0.586**  |
+- **Görüntü İşleme ve Derin Öğrenme:** Python, Ultralytics YOLOv8, OpenCV, PyTorch (CUDA)
+- **Entegrasyon ve İş Akışı:** n8n
+- **Veri Tabanı:** PostgreSQL (Neon Serverless Postgres)
+- **Bildirim ve Raporlama Servisi:** Telegram Bot API
+- **API Test ve Doğrulama:** Postman
 
 ---
 
-## ⚙️ Kurulum
+## Veri Seti ve Model Başarımı
+
+Model eğitimi [Roboflow Safety Helmet Wearing Dataset](https://universe.roboflow.com/zayed-uddin-chowdhury-ghymx/safety-helmet-wearing-dataset) kullanılarak YOLOv8m mimarisi üzerinde gerçekleştirilmiştir.
+
+| Sınıf | Doğruluk (Precision) | Duyarlılık (Recall) | mAP@0.5 | mAP@0.5:0.95 |
+|---|---|---|---|---|
+| hat | 0.928 | 0.871 | 0.928 | 0.691 |
+| person | 0.935 | 0.879 | 0.939 | 0.480 |
+| **Genel** | **0.932** | **0.875** | **0.934** | **0.586** |
+
+---
+
+## Kurulum ve Çalıştırma
+
+### 1. Ortam Hazırlığı
 
 ```bash
 git clone https://github.com/buseunal/YOLOv8-Ile-Baretsiz-Insan-Tespiti.git
 cd YOLOv8-Ile-Baretsiz-Insan-Tespiti
 python -m venv .venv
-.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**GPU (önerilir):** NVIDIA kartınız varsa PyTorch'un CUDA sürümünü kurun, aksi halde tespit CPU'da çok yavaş çalışır:
+NVIDIA GPU desteği için ortama uygun CUDA derlemesini yükleyin:
 
 ```bash
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 ```
 
-**Model dosyası:** `models/best.pt` Git LFS ile saklanır. Repoyu ZIP olarak indirirseniz bu dosya 133 baytlık bir işaretçi olarak gelir. Bunun yerine:
+### 2. Model Ağırlıkları
+
+Model dosyası `models/best.pt` Git LFS üzerinden yönetilmektedir:
 
 ```bash
 git lfs install
 git lfs pull
 ```
 
-ya da GitHub'da `models/best.pt` → **Download raw file**.
+### 3. Yapılandırma
 
-**Ortam değişkenleri:**
+Ortam değişkenlerini yapılandırmak için `.env` dosyasını oluşturun:
 
 ```bash
-copy .env.example .env          # Linux/macOS: cp .env.example .env
+cp .env.example .env  # Windows: copy .env.example .env
 ```
 
-`.env` içindeki `WEBHOOK_URL` değerini kendi n8n webhook adresinizle değiştirin. Boş bırakılırsa tespit çalışır ama bildirim gönderilmez.
+`.env` içeriğindeki `WEBHOOK_URL` parametresine n8n webhook adresinizi tanımlayın.
 
----
+### 4. n8n ve Veri Tabanı Konfigürasyonu
 
-## 🗄️ n8n ve Veritabanı Kurulumu
+1. `n8n/schema.sql` dosyasını PostgreSQL üzerinde çalıştırarak `violations` tablosunu hazırlayın.
+2. `n8n/n8n_workflow.json` akışını n8n arayüzünden içe aktarın.
+3. PostgreSQL ve Telegram servis bağlantılarınızı tanımlayın.
+4. `n8n/postman_collection.json` dosyasını kullanarak uçtan uca testleri gerçekleştirin.
+5. Akışı aktif hale getirin.
 
-1. **Veritabanı:** [Neon](https://neon.tech) (veya herhangi bir PostgreSQL) üzerinde `n8n/schema.sql` dosyasını çalıştırarak `violations` tablosunu oluşturun.
-2. **Workflow:** n8n'de *Import from File* ile `n8n/n8n_workflow.json` dosyasını içe aktarın.
-3. **Credential:** Postgres ve Telegram düğümlerine kendi bağlantı bilgilerinizi bağlayın.
-4. **Test:** `n8n/postman_collection.json` dosyasını Postman'a aktarıp istekleri çalıştırın.
-5. Workflow'u **Active** yapın ve üretim URL'sini (`/webhook/...`) `.env` dosyasına yazın.
-6. Raporlar için `n8n/reports.sql` içindeki sorguları kullanın.
-
-Gönderilen olay formatı:
+Olay yükü (Event Payload) yapısı:
 
 ```json
-{ "camera_id": "cam-1", "violation_type": "no_helmet", "confidence": 0.87 }
+{
+  "camera_id": "cam-1",
+  "violation_type": "no_helmet",
+  "confidence": 0.87
+}
 ```
 
----
-
-## ▶️ Çalıştırma
-
-Proje klasörüne `deneme.mp4`, `deneme2.mp4`, `deneme3.mp4`, `deneme4.mp4` adlı dört video koyun (videolar repoda yer almaz), ardından:
+### 5. Uygulamayı Başlatma
 
 ```bash
 python train_yolo.py
 ```
 
-Çıkmak için pencerede **q** tuşuna basın. Başarılı bir bildirimde terminalde `Webhook: 200 {"status":"saved"}` görülür.
-
 ---
 
-## 🖼️ Ekran Görüntüleri
+## Sistem Görselleri
 
 | | |
 |---|---|
-| ![Dört kameralı izleme ekranı](docs/images/cameras.png) | ![n8n akışı](docs/images/n8n_workflow.png) |
-| Dört kameralı ekran, kırmızı çerçeveli ihlal tespiti | n8n akışının genel görünümü |
-| ![n8n İhlal Kaydı Başarılı Çalışma](docs/images/n8n_execution_saved.png) | ![n8n Telegram Rapor Akışı](docs/images/n8n_telegram_report_flow.png) |
-| n8n Executions — İhlal kaydı doğrulama (saved) | n8n — Günlük rapor sorgusu & Telegram tetikleme |
-| ![Postman testleri](docs/images/postman.png) | ![Terminal çıktısı](docs/images/terminal.png) |
-| Postman yanıtları ve Test Results (6/6 Pass) | Terminalde `Webhook: 200 {"status":"saved"}` çıktısı |
-| ![Neon violations tablosu](docs/images/neon_table.png) | ![Telegram Günlük Rapor](docs/images/telegram_report.jpg) |
-| Neon PostgreSQL `violations` tablosu | Telegram botuna iletilen günlük özet baret raporu |
+| ![Çoklu Kamera İzleme Paneli](docs/images/cameras.png) | ![n8n Entegrasyon Akışı](docs/images/n8n_workflow.png) |
+| Eşzamanlı çoklu kamera izleme paneli ve ihlal tespiti | n8n olay işleme ve bildirim iş akışı |
+| ![İhlal Doğrulama ve Kayıt](docs/images/n8n_execution_saved.png) | ![Raporlama Hattı](docs/images/n8n_telegram_report_flow.png) |
+| Doğrulanmış ihlal kaydı yürütme detayı | Gün sonu özet sorgulama ve Telegram tetikleme hattı |
+| ![Postman Test Süiti](docs/images/postman.png) | ![Uç Nokta Terminal Logları](docs/images/terminal.png) |
+| Postman entegrasyon test sonuçları | Webhook olay iletim çıktıları |
+| ![PostgreSQL Tablo Görünümü](docs/images/neon_table.png) | ![Telegram Saha Raporu](docs/images/telegram_report.jpg) |
+| PostgreSQL ihlal kayıtları tablosu | Saha bazlı periyodik özet rapor çıktısı |
 
-Model çıktılarından örnekler:
+Örnek tespit çıktıları:
 
 <p align="center">
-  <img src="results/result1.png" width="45%" alt="Result 1"/>
-  <img src="results/result2.png" width="45%" alt="Result 2"/>
+  <img src="results/result1.png" width="45%" alt="Tespit Örneği 1"/>
+  <img src="results/result2.png" width="45%" alt="Tespit Örneği 2"/>
 </p>
 <p align="center">
-  <img src="results/result3.png" width="45%" alt="Result 3"/>
-  <img src="results/result4.png" width="45%" alt="Result 4"/>
+  <img src="results/result3.png" width="45%" alt="Tespit Örneği 3"/>
+  <img src="results/result4.png" width="45%" alt="Tespit Örneği 4"/>
 </p>
 
 ---
 
-## 📁 Proje Yapısı
+## Proje Dizini
 
 ```
-├── train_yolo.py            # Tespit + webhook bildirimi
-├── data.yaml                # Eğitim veri seti tanımı
-├── requirements.txt
-├── .env.example             # WEBHOOK_URL şablonu
+├── train_yolo.py            # Nesne tespiti ve olay iletim modülü
+├── data.yaml                # Veri seti yapılandırması
+├── requirements.txt         # Bağımlılık listesi
+├── .env.example             # Çevre değişkenleri şablonu
 ├── models/
-│   └── best.pt              # Eğitilmiş YOLOv8m ağırlıkları (Git LFS)
+│   └── best.pt              # YOLOv8m model ağırlıkları (Git LFS)
 ├── n8n/
-│   ├── n8n_workflow.json    # n8n akışı
-│   ├── schema.sql           # violations tablosu
-│   ├── reports.sql          # Rapor sorguları
-│   └── postman_collection.json
-├── results/                 # Örnek tespit görüntüleri
-└── docs/images/             # README ekran görüntüleri
+│   ├── n8n_workflow.json    # Entegrasyon akışı tanımı
+│   ├── schema.sql           # Tablo şema tanımı
+│   ├── reports.sql          # Analitik SQL sorguları
+│   └── postman_collection.json # API test paketi
+├── results/                 # Örnek çıkarım sonuçları
+└── docs/images/             # Dokümantasyon görselleri
 ```
-
----
-
-## 🚧 Sınırlamalar ve Geliştirme Fikirleri
-
-- "Baretsiz" kararı yalnızca `person` sınıfına dayanıyor; kişi–baret eşleştirmesi (IoU tabanlı) eklenebilir.
-- Videolar dosyadan okunuyor; RTSP / IP kamera desteği eklenebilir.
-- `mAP@0.5:0.95` değeri `person` sınıfında düşük (0.48); daha fazla veri ve epoch ile iyileştirilebilir.
-- Webhook'a kimlik doğrulama (header token) eklenmeli.
-- Kayıt sırasında ihlal anının görüntüsü de saklanabilir (S3 vb.).
-- Canlı anlık ihlal anında anlık fotoğraf ile birlikte Telegram uyarısı ve monitoring dashboard'u (Grafana, Metabase) eklenebilir.
