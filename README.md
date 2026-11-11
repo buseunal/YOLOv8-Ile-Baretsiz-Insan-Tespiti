@@ -1,6 +1,6 @@
 # YOLOv8 ile Baretsiz İnsan Tespiti
 
-Şantiye kameralarında baret takmayan kişileri YOLOv8 ile gerçek zamanlı tespit edip ihlalleri **n8n webhook → PostgreSQL (Neon)** hattıyla kaydeden uçtan uca bir iş güvenliği projesi.
+Şantiye kameralarında baret takmayan kişileri YOLOv8 ile gerçek zamanlı tespit edip ihlalleri **n8n webhook → PostgreSQL (Neon)** hattıyla kaydeden ve **Telegram** üzerinden günlük özet raporlayan uçtan uca bir iş güvenliği projesi.
 
 ---
 
@@ -13,9 +13,14 @@ flowchart LR
     C --> D["n8n Webhook"]
     D --> E{"confidence >= 0.6?"}
     E -->|Evet| F[("PostgreSQL / Neon<br/>violations")]
-    E -->|Hayır| G["Olay elenir"]
+    E -->|Hayır| G["Olay elenir (ignored)"]
     F --> H["Respond: saved"]
-    F --> I["Raporlar (reports.sql)"]
+    
+    subgraph Otomatik Raporlama
+        T["Cron: Her akşam 20:00"] --> P["Postgres: Günlük özet sorgusu"]
+        P --> JS["Rapor metnini hazırla"]
+        JS --> TG["Telegram Bot Bildirimi"]
+    end
 ```
 
 ---
@@ -27,6 +32,7 @@ flowchart LR
 - GPU (CUDA) desteği ve 4 karenin tek seferde (batch) işlenmesi
 - İhlal anında n8n webhook'una JSON olay gönderimi (kamera başına 10 sn cooldown, arka plan thread'i)
 - n8n'de güven skoru filtresi ve PostgreSQL'e kayıt
+- Her akşam saat 20:00'de otomatik çalışan ve günün ihlal istatistiklerini ileten Telegram botu entegrasyonu
 - Hazır SQL rapor sorguları ve Postman test koleksiyonu
 - Webhook adresi kodda değil, `.env` dosyasında
 
@@ -35,8 +41,9 @@ flowchart LR
 ## 🧰 Kullanılan Teknolojiler
 
 - Python, Ultralytics YOLOv8, OpenCV, PyTorch
-- n8n (webhook otomasyonu)
+- n8n (webhook ve zamanlanmış rapor otomasyonu)
 - PostgreSQL (Neon)
+- Telegram Bot API
 - Postman (API testleri)
 
 ---
@@ -93,10 +100,10 @@ copy .env.example .env          # Linux/macOS: cp .env.example .env
 
 1. **Veritabanı:** [Neon](https://neon.tech) (veya herhangi bir PostgreSQL) üzerinde `n8n/schema.sql` dosyasını çalıştırarak `violations` tablosunu oluşturun.
 2. **Workflow:** n8n'de *Import from File* ile `n8n/n8n_workflow.json` dosyasını içe aktarın.
-3. **Credential:** Postgres düğümlerine kendi veritabanı bilgilerinizle bir credential bağlayın (dosyada credential bulunmaz).
+3. **Credential:** Postgres ve Telegram düğümlerine kendi bağlantı bilgilerinizi bağlayın.
 4. **Test:** `n8n/postman_collection.json` dosyasını Postman'a aktarıp istekleri çalıştırın.
 5. Workflow'u **Active** yapın ve üretim URL'sini (`/webhook/...`) `.env` dosyasına yazın.
-6. Raporlar için `n8n/reports.sql` içindeki sorguları kullanın (kamera başına ihlal, saatlik dağılım, son ihlaller, ortalama güven).
+6. Raporlar için `n8n/reports.sql` içindeki sorguları kullanın.
 
 Gönderilen olay formatı:
 
@@ -123,11 +130,13 @@ python train_yolo.py
 | | |
 |---|---|
 | ![Dört kameralı izleme ekranı](docs/images/cameras.png) | ![n8n akışı](docs/images/n8n_workflow.png) |
-| Dört kameralı ekran, kırmızı çerçeveli ihlal | n8n akışının genel görünümü |
-| ![n8n Executions](docs/images/n8n_executions.png) | ![Postman testleri](docs/images/postman.png) |
-| n8n Executions — başarılı çalışmalar | Postman yanıtları ve Test Results |
-| ![Neon violations tablosu](docs/images/neon_table.png) | ![Terminal çıktısı](docs/images/terminal.png) |
-| Neon'daki `violations` tablosu | Terminalde `Webhook: 200` çıktısı |
+| Dört kameralı ekran, kırmızı çerçeveli ihlal tespiti | n8n akışının genel görünümü |
+| ![n8n İhlal Kaydı Başarılı Çalışma](docs/images/n8n_execution_saved.png) | ![n8n Telegram Rapor Akışı](docs/images/n8n_telegram_report_flow.png) |
+| n8n Executions — İhlal kaydı doğrulama (saved) | n8n — Günlük rapor sorgusu & Telegram tetikleme |
+| ![Postman testleri](docs/images/postman.png) | ![Terminal çıktısı](docs/images/terminal.png) |
+| Postman yanıtları ve Test Results (6/6 Pass) | Terminalde `Webhook: 200 {"status":"saved"}` çıktısı |
+| ![Neon violations tablosu](docs/images/neon_table.png) | ![Telegram Günlük Rapor](docs/images/telegram_report.jpg) |
+| Neon PostgreSQL `violations` tablosu | Telegram botuna iletilen günlük özet baret raporu |
 
 Model çıktılarından örnekler:
 
@@ -169,4 +178,4 @@ Model çıktılarından örnekler:
 - `mAP@0.5:0.95` değeri `person` sınıfında düşük (0.48); daha fazla veri ve epoch ile iyileştirilebilir.
 - Webhook'a kimlik doğrulama (header token) eklenmeli.
 - Kayıt sırasında ihlal anının görüntüsü de saklanabilir (S3 vb.).
-- Telegram / e-posta bildirimleri ve bir dashboard (Grafana, Metabase) eklenebilir.
+- Canlı anlık ihlal anında anlık fotoğraf ile birlikte Telegram uyarısı ve monitoring dashboard'u (Grafana, Metabase) eklenebilir.
